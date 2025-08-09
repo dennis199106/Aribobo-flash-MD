@@ -1,0 +1,44 @@
+name: Scheduled CI
+
+on:
+  schedule:
+    # Runs every 5 hours at minute 0
+    - cron: '0 */5 * * *'
+  workflow_dispatch: # Allows manual triggering
+
+jobs:
+  scheduled-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js 20
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20
+        cache: 'npm'
+        
+    - name: Clean install dependencies
+      run: npm ci
+      
+    - name: Build project
+      run: npm run build
+      
+    - name: Run tests
+      run: npm test
+      
+    # Add a small delay to avoid appearing too automated
+    - name: Wait
+      run: sleep 30
+      
+    - name: Upload results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: scheduled-run-${{ github.run_number }}
+        path: |
+          apps/web/dist/
+          test-results/
+        retention-days: 3
